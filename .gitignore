@@ -1,0 +1,16 @@
+# Virtual Environment
+.venv/
+__pycache__/
+*.pyc
+
+# Sensitive Info
+.env
+.cache/
+
+# Large Data & Outputs
+Liked_Songs.csv
+output/
+
+# IDEs
+.vscode/
+.idea/
