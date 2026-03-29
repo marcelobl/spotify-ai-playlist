@@ -10,7 +10,7 @@ load_dotenv()
 
 CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")
 CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET")
-REDIRECT_URI = os.getenv("SPOTIFY_REDIRECT_URI", "http://localhost:8888/callback")
+REDIRECT_URI = os.getenv("SPOTIFY_REDIRECT_URI", "http://127.0.0.1:8888/callback")
 
 if not CLIENT_ID or not CLIENT_SECRET:
     print("Error: SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET must be set in a .env file.")
