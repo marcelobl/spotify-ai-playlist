@@ -34,31 +34,39 @@ The system is designed to handle large libraries (10k+ tracks) and creates 50+ d
 5.  **Playlist Refinement:** Large clusters are recursively sub-clustered to maintain specific themes.
 6.  **Naming Engine:** Uses `playlist_names.py` to map genre signatures to evocative names (e.g., "Tarde no Rio" for Bossa Nova/Samba, "Deep Cuts" for Lo-fi House).
 7.  **Export:** Produces `output/playlists.json` (for API integration), `output/playlists_summary.csv`, and an interactive `output/diagnostics.html`.
+8.  **Spotify Sync:** Uses `sync_to_spotify.py` to create or update playlists on your Spotify account using the February 2026 API endpoints.
 
 ## Getting Started
 
 ### Prerequisites
 - Python 3.12 or higher.
 - A `Liked_Songs.csv` file in the project root.
+- Spotify Developer Credentials (`CLIENT_ID`, `CLIENT_SECRET`).
 
 ### Installation
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+cp .env.example .env  # And fill in your credentials
 ```
 
 ### Running the Classifier
 ```bash
+# 1. Generate clusters and playlists locally
 python3 classify_songs.py
+
+# 2. Sync to your Spotify account
+python3 sync_to_spotify.py
 ```
 
 ## Key Files
 
 - `classify_songs.py`: Main execution logic and machine learning pipeline.
+- `sync_to_spotify.py`: Authenticates with Spotify and synchronizes generated playlists.
 - `playlist_names.py`: Thematic mapping and naming dictionary for playlists.
 - `Liked_Songs.csv`: Input data source.
-- `.cache/`: Stores pre-computed genre embeddings to speed up subsequent runs.
+- `.cache/`: Stores pre-computed genre embeddings and Spotify auth tokens.
 - `output/`: Contains the generated playlists and diagnostic reports.
 
 ## Development Conventions
