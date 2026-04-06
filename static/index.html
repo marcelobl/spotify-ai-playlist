@@ -5,6 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Spotify Playlist Classifier</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            spotify: {
+              DEFAULT: '#1DB954',
+              light: '#1ed760', // Slightly lighter for hover
+            }
+          }
+        }
+      }
+    }
+  </script>
   <style>
     @keyframes pulse-bar { 0%, 100% { opacity: .6 } 50% { opacity: 1 } }
     .pulse-bar { animation: pulse-bar 1.5s ease-in-out infinite; }
@@ -19,7 +33,7 @@
   <!-- Header -->
   <header class="border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
     <div class="flex items-center gap-3">
-      <svg class="w-8 h-8 text-green-500" viewBox="0 0 24 24" fill="currentColor">
+      <svg class="w-8 h-8 text-spotify" viewBox="0 0 24 24" fill="currentColor">
         <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
       </svg>
       <h1 class="text-xl font-bold">Playlist Classifier</h1>
@@ -39,7 +53,7 @@
         <p class="text-zinc-400 mb-8 max-w-md mx-auto">
           Automatically organize your Spotify library into thematic playlists using genre analysis and audio features.
         </p>
-        <button onclick="login()" class="bg-green-500 hover:bg-green-400 text-black font-bold rounded-full px-8 py-3 text-lg transition-colors">
+        <button onclick="login()" class="bg-spotify hover:bg-spotify-light text-black font-bold rounded-full px-8 py-3 text-lg transition-colors">
           Connect to Spotify
         </button>
       </div>
@@ -53,15 +67,15 @@
         <div class="mb-8">
           <label class="block text-sm font-semibold text-zinc-300 mb-3">Naming Mode</label>
           <div class="space-y-3">
-            <label class="flex items-start gap-3 p-4 rounded-lg bg-zinc-900 border border-zinc-800 cursor-pointer hover:border-zinc-700 transition-colors has-[:checked]:border-green-500">
-              <input type="radio" name="naming_mode" value="descriptive" checked class="mt-1 accent-green-500">
+            <label class="flex items-start gap-3 p-4 rounded-lg bg-zinc-900 border border-zinc-800 cursor-pointer hover:border-zinc-700 transition-colors has-[:checked]:border-spotify">
+              <input type="radio" name="naming_mode" value="descriptive" checked class="mt-1 accent-spotify">
               <div>
                 <div class="font-semibold">Descriptive</div>
                 <div class="text-sm text-zinc-400">Matches curated playlist names like "Tarde no Rio", "Golden Era Crates". Falls back to generated names.</div>
               </div>
             </label>
-            <label class="flex items-start gap-3 p-4 rounded-lg bg-zinc-900 border border-zinc-800 cursor-pointer hover:border-zinc-700 transition-colors has-[:checked]:border-green-500">
-              <input type="radio" name="naming_mode" value="creative" class="mt-1 accent-green-500">
+            <label class="flex items-start gap-3 p-4 rounded-lg bg-zinc-900 border border-zinc-800 cursor-pointer hover:border-zinc-700 transition-colors has-[:checked]:border-spotify">
+              <input type="radio" name="naming_mode" value="creative" class="mt-1 accent-spotify">
               <div>
                 <div class="font-semibold">Creative</div>
                 <div class="text-sm text-zinc-400">Always generates names from genre + audio descriptors, e.g. "Trip Hop - Noturno", "Mpb - Solar".</div>
@@ -70,7 +84,7 @@
           </div>
         </div>
 
-        <button onclick="startClassification()" class="w-full bg-green-500 hover:bg-green-400 text-black font-bold rounded-full px-6 py-3 text-lg transition-colors">
+        <button onclick="startClassification()" class="w-full bg-spotify hover:bg-spotify-light text-black font-bold rounded-full px-6 py-3 text-lg transition-colors">
           Start Classification
         </button>
       </div>
@@ -83,7 +97,7 @@
 
         <!-- Progress bar -->
         <div class="w-full bg-zinc-800 rounded-full h-2 mb-8">
-          <div id="progress-bar" class="bg-green-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+          <div id="progress-bar" class="bg-spotify h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
         </div>
 
         <ol id="step-list" class="space-y-3">
@@ -116,7 +130,7 @@
         <button onclick="selectAll(false)" class="text-sm text-zinc-300 hover:text-white underline">Deselect All</button>
         <div class="flex-1"></div>
         <span id="selected-count" class="text-sm text-zinc-400"></span>
-        <button onclick="startSync()" id="sync-btn" class="bg-green-500 hover:bg-green-400 text-black font-bold rounded-full px-6 py-2 transition-colors">
+        <button onclick="startSync()" id="sync-btn" class="bg-spotify hover:bg-spotify-light text-black font-bold rounded-full px-6 py-2 transition-colors">
           Sync Selected to Spotify
         </button>
       </div>
@@ -129,7 +143,7 @@
         <div class="bg-zinc-900 rounded-xl p-8 max-w-md w-full mx-4 border border-zinc-800">
           <h3 class="text-xl font-bold mb-4">Syncing to Spotify...</h3>
           <div class="w-full bg-zinc-800 rounded-full h-2 mb-4">
-            <div id="sync-progress-bar" class="bg-green-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+            <div id="sync-progress-bar" class="bg-spotify h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
           </div>
           <p id="sync-status" class="text-sm text-zinc-400"></p>
         </div>
@@ -241,10 +255,10 @@ function updateStep(step, label, detail) {
   if (!li) return;
   li.className = 'step-item flex items-center gap-3 text-zinc-100';
   const icon = li.querySelector('.step-icon');
-  icon.className = 'step-icon w-6 h-6 rounded-full border border-green-500 flex items-center justify-center text-xs shrink-0 pulse-bar';
+  icon.className = 'step-icon w-6 h-6 rounded-full border border-spotify flex items-center justify-center text-xs shrink-0 pulse-bar';
   icon.textContent = '';
   const dot = document.createElement('span');
-  dot.className = 'w-2 h-2 bg-green-500 rounded-full';
+  dot.className = 'w-2 h-2 bg-spotify rounded-full';
   icon.appendChild(dot);
 
   // If detail contains final info for this step, mark complete
@@ -258,9 +272,9 @@ function markComplete(step) {
   const li = document.querySelector('[data-step="' + step + '"]');
   if (!li) return;
   completedSteps.add(step);
-  li.className = 'step-item flex items-center gap-3 text-green-400';
+  li.className = 'step-item flex items-center gap-3 text-spotify-light';
   const icon = li.querySelector('.step-icon');
-  icon.className = 'step-icon w-6 h-6 rounded-full bg-green-500 flex items-center justify-center text-xs shrink-0';
+  icon.className = 'step-icon w-6 h-6 rounded-full bg-spotify flex items-center justify-center text-xs shrink-0';
   icon.textContent = '';
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('class', 'w-3.5 h-3.5 text-black');
@@ -298,7 +312,7 @@ function renderResults() {
     cb.type = 'checkbox';
     cb.checked = true;
     cb.dataset.idx = i;
-    cb.className = 'mt-1 accent-green-500 w-4 h-4 shrink-0';
+    cb.className = 'mt-1 accent-spotify w-4 h-4 shrink-0';
     cb.addEventListener('change', updateSelectedCount);
     header.appendChild(cb);
 
