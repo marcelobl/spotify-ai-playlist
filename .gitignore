@@ -8,6 +8,7 @@ __pycache__/
 .cache/
 .claude/
 .gemini/
+GEMINI.md
 
 # Large Data & Outputs
 Liked_Songs.csv
