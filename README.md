@@ -121,28 +121,14 @@ You can also run the pipeline manually using the CLI scripts.
 
 ```mermaid
 graph TD
-    subgraph "Data Acquisition"
-        A[Spotify API] -->|Liked Songs| B(Fetch metadata)
-        A -->|Audio Features| C(Fetch attributes)
-        A -->|Artists| D(Fetch genres)
-    end
-    
-    subgraph "Clustering Pipeline"
-        B & C & D --> E[Preprocessing & Backfill]
-        E --> F[Hybrid Feature Matrix]
-        F --> G[UMAP Reduction]
-        G --> H[HDBSCAN Clustering]
-    end
-    
-    subgraph "Playlist Generation"
-        H --> I[Soft Clustering Assignment]
-        I --> J[Sub-clustering & Recursive Refinement]
-        J --> K[Intelligent Naming Engine]
-    end
-    
-    K --> L[output/playlists.json]
-    L --> M[Spotify Sync]
-    M -->|Create Playlists| A
+    A[Spotify API] --> B{Fetch Liked Songs, Audio Features, Genres};
+    B --> C{Preprocess Data & Create Hybrid Feature Matrix};
+    C --> D{UMAP for Dimensionality Reduction};
+    D --> E{HDBSCAN for Clustering};
+    E --> F{Soft Clustering & Recursive Refinement};
+    F --> G{Intelligent Playlist Naming};
+    G --> H[output/playlists.json];
+    H --> I[Spotify Sync: Create/Update Playlists];
 ```
 
 - **`app.py`**: FastAPI web interface serving static files and API routes.
@@ -152,9 +138,6 @@ graph TD
 - **`playlist_names.py`**: Naming dictionary to map thematic signatures to playlist names.
 - **`.cache/`**: (Generated) Stores pre-computed embeddings and Spotify tokens.
 - **`output/`**: (Generated) Contains the output JSON/CSV reports and HTML diagnostics.
-
-## Keywords
-Spotify playlist generator, AI playlist generator, Spotify organizer, sort Spotify playlists, create Spotify playlists, smart playlist generator, automatic playlist generator, Spotify AI, machine learning playlist, music clustering, playlist from liked songs, vibe-based playlists.
 
 ## License
 
