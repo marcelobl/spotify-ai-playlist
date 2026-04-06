@@ -126,6 +126,7 @@ You can also run the pipeline manually using the CLI scripts.
 - **Intelligent Naming:** A custom naming engine analyzes the genre composition of each cluster and assigns it an evocative, thematic name.
 - **Output & Sync:** The final playlists are generated as a `playlists.json` file, which is then used to create or update the playlists directly in your Spotify account.
 
+### File Structure
 - **`app.py`**: FastAPI web interface serving static files and API routes.
 - **`pipeline.py`**: Contains the core logic for the Web UI's data processing stream.
 - **`classify_songs.py`**: CLI script containing the machine learning pipeline (StandardScaler, UMAP, HDBSCAN).
