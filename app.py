@@ -16,7 +16,7 @@ from pipeline import PipelineRunner, SyncRunner
 
 load_dotenv()
 
-app = FastAPI(title="Spotify Playlist Classifier")
+app = FastAPI(title="Vibe Guru - AI Spotify Playlist Organizer")
 
 STATIC_DIR = Path(__file__).parent / "static"
 CACHE_DIR = Path(__file__).parent / ".cache"
