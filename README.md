@@ -10,6 +10,8 @@ This project analyzes a user's Spotify library (fetched directly via the API) an
 
 The system handles large libraries (10k+ tracks) and creates distinct, named playlists. It provides both a traditional CLI and a modern Web UI for real-time progress tracking.
 
+![Web UI Interface](assets/web_ui.png)
+
 ## Features
 
 - **Direct Spotify Integration:** Fetch your Liked Songs directly from the Spotify API—no manual export needed.
@@ -65,6 +67,12 @@ The Web UI provides a visual representation of the processing pipeline, streamin
 2. Open your browser and navigate to `http://127.0.0.1:5000/`.
 3. Authenticate with Spotify when prompted and start the classification/sync process.
 
+## Diagnostics & Visualization
+
+The pipeline produces detailed interactive diagnostics using Plotly, allowing you to visualize how your library was clustered in a 2D UMAP space.
+
+![Clustering Visualization](assets/clustering_graph.png)
+
 ### Command Line Interface (CLI)
 
 You can also run the pipeline manually using the CLI scripts.
@@ -82,6 +90,34 @@ You can also run the pipeline manually using the CLI scripts.
    This script reads `output/playlists.json`, authenticates with your Spotify account, and creates or updates the playlists.
 
 ## Architecture
+
+### Data Pipeline
+
+```mermaid
+graph TD
+    subgraph "Data Acquisition"
+        A[Spotify API] -->|Liked Songs| B(Fetch metadata)
+        A -->|Audio Features| C(Fetch attributes)
+        A -->|Artists| D(Fetch genres)
+    end
+    
+    subgraph "Clustering Pipeline"
+        B & C & D --> E[Preprocessing & Backfill]
+        E --> F[Hybrid Feature Matrix]
+        F --> G[UMAP Reduction]
+        G --> H[HDBSCAN Clustering]
+    end
+    
+    subgraph "Playlist Generation"
+        H --> I[Soft Clustering Assignment]
+        I --> J[Sub-clustering & Recursive Refinement]
+        J --> K[Intelligent Naming Engine]
+    end
+    
+    K --> L[output/playlists.json]
+    L --> M[Spotify Sync]
+    M -->|Create Playlists| A
+```
 
 - **`app.py`**: FastAPI web interface serving static files and API routes.
 - **`pipeline.py`**: Contains the core logic for the Web UI's data processing stream.
