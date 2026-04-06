@@ -1,22 +1,33 @@
-# Spotify Liked Songs Classifier
+<div align="center">
+  <img src="assets/vibe-guru-logo.png" alt="Vibe Guru Logo" width="600"/>
+</div>
 
-A Python-based tool for organizing Spotify "Liked Songs" into cohesive, thematic playlists using hybrid genre-embedding and audio-feature clustering. 
+# Vibe Guru: Your Personal AI-Powered Spotify Playlist Organizer
 
-## Overview
+**Vibe Guru** is a sophisticated, AI-driven tool that automatically organizes your chaotic "Liked Songs" on Spotify into dozens of cohesive, vibe-based playlists. Stop letting your favorite tracks get lost in a massive, unorganized list—let our Spotify AI playlist technology rescue your music library.
 
-This project analyzes a user's Spotify library (fetched directly via the API) and automatically groups tracks into meaningful playlists. Unlike simple genre-based sorting, it uses a hybrid approach:
-- **Genre Semantics:** High-dimensional embeddings capture the relationship between musical genres.
-- **Audio Features:** Technical attributes like danceability, energy, and acousticness ensure a consistent "vibe" within each playlist.
+## The Problem: The "Liked Songs" Graveyard
 
-The system handles large libraries (10k+ tracks) and creates distinct, named playlists. It provides both a traditional CLI and a modern Web UI for real-time progress tracking.
+Do you have thousands of songs languishing in your Spotify "Liked Songs"? You hit 'like' on a great track, promising to find it later, but it gets buried in an ever-growing list. Manually sorting this collection is a monumental task that no one has time for. As a result, countless amazing songs are lost, never to be heard again. Your music library becomes a graveyard of forgotten favorites.
+
+## The Solution: Intelligent Spotify AI Playlists
+
+**Vibe Guru** is the solution. This isn't just another simple genre sorter. We use a powerful hybrid AI approach to create the most accurate and thematic Spotify AI playlists possible:
+
+- **Genre Semantics:** Our model understands the subtle relationships between over 5,000 genres, grouping related styles like a human would.
+- **Audio Feature Analysis:** We analyze the core audio features of each track—danceability, energy, acousticness, tempo, and more—to ensure every playlist has a consistent, tangible "vibe."
+- **Intelligent Clustering:** Using advanced machine learning (**UMAP + HDBSCAN**), Vibe Guru discovers natural patterns in your music, creating playlists that just *make sense*.
+
+The result is a beautifully organized Spotify library with dozens of new playlists, each with a distinct mood and theme, ready for any occasion.
 
 ## Features
 
-- **Direct Spotify Integration:** Fetch your Liked Songs directly from the Spotify API—no manual export needed.
-- **Advanced Clustering Pipeline:** Uses **UMAP** for dimensionality reduction and **HDBSCAN** for density-based clustering to handle outliers and effectively cluster tracks.
-- **Intelligent Naming Engine:** Maps genre signatures to evocative, thematic names (e.g., "Tarde no Rio" for Bossa Nova/Samba, "Deep Cuts" for Lo-fi House).
-- **Web UI:** A FastAPI-powered web interface with real-time SSE streaming for progress visualization.
-- **Spotify Sync:** Automatically creates or updates playlists on your Spotify account.
+- **Fully Automated:** Connect your Spotify, and Vibe Guru's AI does the rest.
+- **Deep Analysis:** Creates playlists based on a hybrid of genre relationships and technical audio features.
+- **Handles Massive Libraries:** Built to organize 10,000+ tracks with ease.
+- **Evocative Naming:** Generates creative, thematic names for your new playlists (e.g., "Tarde no Rio" for Bossa Nova, "Warehouse Echoes" for Deep House).
+- **Web Interface:** A sleek, modern UI to launch the process and track real-time progress.
+- **Direct Spotify Sync:** Automatically creates and updates the new playlists in your Spotify account.
 
 ## Prerequisites
 
@@ -141,6 +152,9 @@ graph TD
 - **`playlist_names.py`**: Naming dictionary to map thematic signatures to playlist names.
 - **`.cache/`**: (Generated) Stores pre-computed embeddings and Spotify tokens.
 - **`output/`**: (Generated) Contains the output JSON/CSV reports and HTML diagnostics.
+
+## Keywords
+Spotify playlist generator, AI playlist generator, Spotify organizer, sort Spotify playlists, create Spotify playlists, smart playlist generator, automatic playlist generator, Spotify AI, machine learning playlist, music clustering, playlist from liked songs, vibe-based playlists.
 
 ## License
 
