@@ -6,3 +6,5 @@ umap-learn>=0.5.4
 plotly>=5.15
 spotipy>=2.23
 python-dotenv>=1.0.0
+fastapi>=0.110
+uvicorn>=0.29

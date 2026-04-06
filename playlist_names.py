@@ -285,12 +285,18 @@ AUDIO_DIFFERENTIATORS = {
 }
 
 
-def match_playlist_name(top_genres, audio_profile):
+def match_playlist_name(top_genres, audio_profile, mode="descriptive"):
     """
     Match a cluster's top genres against the signature table.
     Returns (base_name, name, description).
     base_name is used for grouping duplicates.
+
+    mode="descriptive": match PLAYLIST_SIGNATURES first, fall back to generated names.
+    mode="creative": skip signatures entirely, always generate genre+audio-descriptor names.
     """
+    if mode == "creative":
+        return _generate_name(top_genres, audio_profile)
+
     genre_set = set(g for g, _ in top_genres[:8])
 
     best_score = 0

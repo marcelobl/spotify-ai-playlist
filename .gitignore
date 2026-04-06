@@ -6,11 +6,15 @@ __pycache__/
 # Sensitive Info
 .env
 .cache/
+.claude/
+.gemini/
 
 # Large Data & Outputs
 Liked_Songs.csv
 output/
+*.log
 
-# IDEs
+# IDEs & OS
 .vscode/
 .idea/
+.DS_Store

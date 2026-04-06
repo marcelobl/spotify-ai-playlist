@@ -39,73 +39,96 @@ AUDIO_FEATURES = [
 ]
 
 
+def run_pipeline(naming_mode="descriptive", progress_callback=None):
+    """
+    Run the full classification pipeline.
+
+    Args:
+        naming_mode: "descriptive" (match signatures first) or "creative" (generate names)
+        progress_callback: optional callable(step, total_steps, label, detail)
+
+    Returns:
+        list of named playlist dicts
+    """
+    def _progress(step, label, detail=""):
+        if progress_callback:
+            progress_callback(step, 10, label, detail)
+
+    # Step 1: Load data
+    _progress(1, "Loading data")
+    df = load_data()
+    _progress(1, "Loading data", f"Loaded {len(df)} tracks, {df['has_genre'].sum()} with genres")
+
+    # Step 2: Artist genre backfill
+    _progress(2, "Backfilling genres from same-artist tracks")
+    backfill_count = backfill_genres(df)
+    _progress(2, "Backfilling genres", f"Backfilled {backfill_count} tracks. Now {df['has_genre'].sum()} with genres")
+
+    # Step 3: Genre embeddings
+    _progress(3, "Computing genre embeddings")
+    genre_embeddings = embed_genres(df)
+    _progress(3, "Computing genre embeddings", f"Embeddings shape: {genre_embeddings.shape}")
+
+    # Step 4: Build hybrid features
+    _progress(4, "Building hybrid feature matrix")
+    audio_scaled, scaler = scale_audio(df)
+    hybrid_features, hybrid_idx = build_hybrid_features(df, genre_embeddings, audio_scaled)
+    _progress(4, "Building hybrid feature matrix", f"Hybrid matrix: {hybrid_features.shape} for {len(hybrid_idx)} tracks")
+
+    # Step 5: UMAP
+    _progress(5, "Reducing dimensions with UMAP")
+    reduced, reduced_2d = reduce_dims(hybrid_features)
+    _progress(5, "Reducing dimensions with UMAP", f"Reduced to {reduced.shape[1]} dims")
+
+    # Step 6: HDBSCAN
+    _progress(6, "Clustering with HDBSCAN")
+    labels, probabilities, soft_labels = cluster(reduced)
+    n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
+    noise_count = (labels == -1).sum()
+    _progress(6, "Clustering with HDBSCAN", f"Found {n_clusters} clusters, {noise_count} noise points")
+
+    # Step 7: Assign no-genre tracks
+    _progress(7, "Assigning tracks without genres")
+    all_labels = assign_all_tracks(df, hybrid_idx, labels, probabilities, audio_scaled)
+    assigned = sum(1 for v in all_labels.values() if v >= 0)
+    _progress(7, "Assigning tracks without genres", f"{assigned}/{len(df)} tracks assigned")
+
+    # Step 8: Multi-assignment & sub-clustering
+    _progress(8, "Building playlists")
+    playlists = build_playlists(df, all_labels, hybrid_idx, soft_labels, reduced, audio_scaled)
+    _progress(8, "Building playlists", f"Created {len(playlists)} playlists")
+
+    # Step 9: Name playlists
+    _progress(9, "Naming playlists")
+    named_playlists = name_playlists(playlists, df, naming_mode=naming_mode)
+    _progress(9, "Naming playlists", f"Named {len(named_playlists)} playlists")
+
+    # Step 10: Export
+    _progress(10, "Exporting results")
+    export(named_playlists, df, hybrid_idx, reduced_2d, labels)
+    _progress(10, "Exporting results", "Done")
+
+    return named_playlists
+
+
 def main():
     print("=" * 60)
     print("SPOTIFY LIKED SONGS CLASSIFIER")
     print("=" * 60)
 
-    # Step 1: Load data
-    print("\n[1/10] Loading data...")
-    df = load_data()
-    print(f"  Loaded {len(df)} tracks, {df['has_genre'].sum()} with genres")
+    def cli_progress(step, total, label, detail):
+        print(f"\n[{step}/{total}] {label}...")
+        if detail:
+            print(f"  {detail}")
 
-    # Step 2: Artist genre backfill
-    print("\n[2/10] Backfilling genres from same-artist tracks...")
-    backfill_count = backfill_genres(df)
-    print(f"  Backfilled {backfill_count} tracks. Now {df['has_genre'].sum()} with genres")
+    named_playlists = run_pipeline(progress_callback=cli_progress)
 
-    # Step 3: Genre embeddings
-    print("\n[3/10] Computing genre embeddings...")
-    genre_embeddings = embed_genres(df)
-    print(f"  Embeddings shape: {genre_embeddings.shape}")
-
-    # Step 4: Build hybrid features
-    print("\n[4/10] Building hybrid feature matrix...")
-    audio_scaled, scaler = scale_audio(df)
-    hybrid_features, hybrid_idx = build_hybrid_features(df, genre_embeddings, audio_scaled)
-    print(f"  Hybrid matrix: {hybrid_features.shape} for {len(hybrid_idx)} tracks")
-
-    # Step 5: UMAP
-    print("\n[5/10] Reducing dimensions with UMAP...")
-    reduced, reduced_2d = reduce_dims(hybrid_features)
-    print(f"  Reduced to {reduced.shape[1]} dims (+ 2D for viz)")
-
-    # Step 6: HDBSCAN
-    print("\n[6/10] Clustering with HDBSCAN...")
-    labels, probabilities, soft_labels = cluster(reduced)
-    n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
-    noise_count = (labels == -1).sum()
-    print(f"  Found {n_clusters} clusters, {noise_count} noise points ({noise_count/len(labels)*100:.1f}%)")
-
-    # Step 7: Assign no-genre tracks
-    print("\n[7/10] Assigning tracks without genres...")
-    all_labels = assign_all_tracks(df, hybrid_idx, labels, probabilities, audio_scaled)
-    assigned = sum(1 for v in all_labels.values() if v >= 0)
-    print(f"  {assigned}/{len(df)} tracks assigned to clusters")
-
-    # Step 8: Multi-assignment & sub-clustering for 50+ playlists
-    print("\n[8/10] Building playlists (multi-assignment + sub-clustering)...")
-    playlists = build_playlists(df, all_labels, hybrid_idx, soft_labels, reduced, audio_scaled)
-    print(f"  Created {len(playlists)} playlists")
-
-    # Step 9: Name playlists
-    print("\n[9/10] Naming playlists...")
-    named_playlists = name_playlists(playlists, df)
-    for p in named_playlists:
-        print(f"  {p['name']:40s} ({p['track_count']} tracks)")
-
-    # Step 10: Export
-    print("\n[10/10] Exporting results...")
-    export(named_playlists, df, hybrid_idx, reduced_2d, labels)
-
-    # Summary
     all_uris = set()
     for p in named_playlists:
         all_uris.update(p["track_uris"])
     print(f"\n{'=' * 60}")
     print(f"DONE! {len(named_playlists)} playlists created")
-    print(f"  Total unique tracks in playlists: {len(all_uris)}/{len(df)}")
-    print(f"  Coverage: {len(all_uris)/len(df)*100:.1f}%")
+    print(f"  Total unique tracks in playlists: {len(all_uris)}")
     print(f"  Output: {OUTPUT_DIR}/")
     print(f"{'=' * 60}")
 
@@ -588,7 +611,7 @@ def deduplicate_playlists(playlists):
 
 
 # ─── Step 9: Name Playlists ─────────────────────────────────────
-def name_playlists(playlists, df):
+def name_playlists(playlists, df, naming_mode="descriptive"):
     from playlist_names import match_playlist_name, differentiate_name
 
     # First pass: compute metadata for all playlists
@@ -607,7 +630,7 @@ def name_playlists(playlists, df):
         for feat in AUDIO_FEATURES:
             audio_profile[feat] = float(df.iloc[indices][feat].mean())
 
-        base_name, name, description = match_playlist_name(top_genres, audio_profile)
+        base_name, name, description = match_playlist_name(top_genres, audio_profile, mode=naming_mode)
 
         playlist_meta.append({
             "base_name": base_name,

@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-zinc-950">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spotify Playlist Classifier</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes pulse-bar { 0%, 100% { opacity: .6 } 50% { opacity: 1 } }
+    .pulse-bar { animation: pulse-bar 1.5s ease-in-out infinite; }
+    .audio-bar { transition: width 0.3s ease; }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #18181b; }
+    ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
+  </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen font-sans">
+
+  <!-- Header -->
+  <header class="border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <svg class="w-8 h-8 text-green-500" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+      </svg>
+      <h1 class="text-xl font-bold">Playlist Classifier</h1>
+    </div>
+    <div id="user-info" class="text-sm text-zinc-400 hidden">
+      <span id="user-name"></span>
+      <button onclick="logout()" class="ml-3 text-zinc-500 hover:text-zinc-300 underline text-xs">Logout</button>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-6 py-10">
+
+    <!-- Screen 1: Auth -->
+    <section id="screen-auth" class="hidden">
+      <div class="text-center py-20">
+        <h2 class="text-3xl font-bold mb-4">Classify Your Liked Songs</h2>
+        <p class="text-zinc-400 mb-8 max-w-md mx-auto">
+          Automatically organize your Spotify library into thematic playlists using genre analysis and audio features.
+        </p>
+        <button onclick="login()" class="bg-green-500 hover:bg-green-400 text-black font-bold rounded-full px-8 py-3 text-lg transition-colors">
+          Connect to Spotify
+        </button>
+      </div>
+    </section>
+
+    <!-- Screen 2: Configure -->
+    <section id="screen-configure" class="hidden">
+      <div class="max-w-lg mx-auto py-12">
+        <h2 class="text-2xl font-bold mb-6">Configuration</h2>
+
+        <div class="mb-8">
+          <label class="block text-sm font-semibold text-zinc-300 mb-3">Naming Mode</label>
+          <div class="space-y-3">
+            <label class="flex items-start gap-3 p-4 rounded-lg bg-zinc-900 border border-zinc-800 cursor-pointer hover:border-zinc-700 transition-colors has-[:checked]:border-green-500">
+              <input type="radio" name="naming_mode" value="descriptive" checked class="mt-1 accent-green-500">
+              <div>
+                <div class="font-semibold">Descriptive</div>
+                <div class="text-sm text-zinc-400">Matches curated playlist names like "Tarde no Rio", "Golden Era Crates". Falls back to generated names.</div>
+              </div>
+            </label>
+            <label class="flex items-start gap-3 p-4 rounded-lg bg-zinc-900 border border-zinc-800 cursor-pointer hover:border-zinc-700 transition-colors has-[:checked]:border-green-500">
+              <input type="radio" name="naming_mode" value="creative" class="mt-1 accent-green-500">
+              <div>
+                <div class="font-semibold">Creative</div>
+                <div class="text-sm text-zinc-400">Always generates names from genre + audio descriptors, e.g. "Trip Hop - Noturno", "Mpb - Solar".</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <button onclick="startClassification()" class="w-full bg-green-500 hover:bg-green-400 text-black font-bold rounded-full px-6 py-3 text-lg transition-colors">
+          Start Classification
+        </button>
+      </div>
+    </section>
+
+    <!-- Screen 3: Processing -->
+    <section id="screen-processing" class="hidden">
+      <div class="max-w-lg mx-auto py-12">
+        <h2 class="text-2xl font-bold mb-6">Classifying...</h2>
+
+        <!-- Progress bar -->
+        <div class="w-full bg-zinc-800 rounded-full h-2 mb-8">
+          <div id="progress-bar" class="bg-green-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+
+        <ol id="step-list" class="space-y-3">
+          <li data-step="1" class="step-item flex items-center gap-3 text-zinc-500"><span class="step-icon w-6 h-6 rounded-full border border-zinc-700 flex items-center justify-center text-xs shrink-0"></span><span>Loading data</span></li>
+          <li data-step="2" class="step-item flex items-center gap-3 text-zinc-500"><span class="step-icon w-6 h-6 rounded-full border border-zinc-700 flex items-center justify-center text-xs shrink-0"></span><span>Backfilling genres</span></li>
+          <li data-step="3" class="step-item flex items-center gap-3 text-zinc-500"><span class="step-icon w-6 h-6 rounded-full border border-zinc-700 flex items-center justify-center text-xs shrink-0"></span><span>Computing genre embeddings</span></li>
+          <li data-step="4" class="step-item flex items-center gap-3 text-zinc-500"><span class="step-icon w-6 h-6 rounded-full border border-zinc-700 flex items-center justify-center text-xs shrink-0"></span><span>Building hybrid features</span></li>
+          <li data-step="5" class="step-item flex items-center gap-3 text-zinc-500"><span class="step-icon w-6 h-6 rounded-full border border-zinc-700 flex items-center justify-center text-xs shrink-0"></span><span>Reducing dimensions (UMAP)</span></li>
+          <li data-step="6" class="step-item flex items-center gap-3 text-zinc-500"><span class="step-icon w-6 h-6 rounded-full border border-zinc-700 flex items-center justify-center text-xs shrink-0"></span><span>Clustering (HDBSCAN)</span></li>
+          <li data-step="7" class="step-item flex items-center gap-3 text-zinc-500"><span class="step-icon w-6 h-6 rounded-full border border-zinc-700 flex items-center justify-center text-xs shrink-0"></span><span>Assigning tracks</span></li>
+          <li data-step="8" class="step-item flex items-center gap-3 text-zinc-500"><span class="step-icon w-6 h-6 rounded-full border border-zinc-700 flex items-center justify-center text-xs shrink-0"></span><span>Building playlists</span></li>
+          <li data-step="9" class="step-item flex items-center gap-3 text-zinc-500"><span class="step-icon w-6 h-6 rounded-full border border-zinc-700 flex items-center justify-center text-xs shrink-0"></span><span>Naming playlists</span></li>
+          <li data-step="10" class="step-item flex items-center gap-3 text-zinc-500"><span class="step-icon w-6 h-6 rounded-full border border-zinc-700 flex items-center justify-center text-xs shrink-0"></span><span>Exporting results</span></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Screen 4: Results -->
+    <section id="screen-results" class="hidden">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold">Results</h2>
+        <div class="flex items-center gap-3">
+          <span id="results-summary" class="text-sm text-zinc-400"></span>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="flex items-center gap-3 mb-6 p-4 bg-zinc-900 rounded-lg border border-zinc-800">
+        <button onclick="selectAll(true)" class="text-sm text-zinc-300 hover:text-white underline">Select All</button>
+        <button onclick="selectAll(false)" class="text-sm text-zinc-300 hover:text-white underline">Deselect All</button>
+        <div class="flex-1"></div>
+        <span id="selected-count" class="text-sm text-zinc-400"></span>
+        <button onclick="startSync()" id="sync-btn" class="bg-green-500 hover:bg-green-400 text-black font-bold rounded-full px-6 py-2 transition-colors">
+          Sync Selected to Spotify
+        </button>
+      </div>
+
+      <!-- Playlist grid -->
+      <div id="playlist-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+
+      <!-- Sync overlay -->
+      <div id="sync-overlay" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
+        <div class="bg-zinc-900 rounded-xl p-8 max-w-md w-full mx-4 border border-zinc-800">
+          <h3 class="text-xl font-bold mb-4">Syncing to Spotify...</h3>
+          <div class="w-full bg-zinc-800 rounded-full h-2 mb-4">
+            <div id="sync-progress-bar" class="bg-green-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+          </div>
+          <p id="sync-status" class="text-sm text-zinc-400"></p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+<script>
+// ─── State ──────────────────────────────────────────────────────
+let playlists = [];
+let completedSteps = new Set();
+
+// ─── Util ───────────────────────────────────────────────────────
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function setText(el, text) {
+  el.textContent = text;
+}
+
+// ─── Navigation ─────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
+  document.getElementById('screen-' + id).classList.remove('hidden');
+}
+
+// ─── Auth ───────────────────────────────────────────────────────
+async function checkAuth() {
+  try {
+    const res = await fetch('/api/auth/status');
+    const data = await res.json();
+    if (data.authenticated) {
+      document.getElementById('user-info').classList.remove('hidden');
+      setText(document.getElementById('user-name'), data.user);
+      showScreen('configure');
+    } else {
+      showScreen('auth');
+    }
+  } catch {
+    showScreen('auth');
+  }
+}
+
+function login() {
+  window.location.href = '/api/auth/login';
+}
+
+async function logout() {
+  await fetch('/api/auth/logout', { method: 'POST' });
+  document.getElementById('user-info').classList.add('hidden');
+  showScreen('auth');
+}
+
+// ─── Classification ─────────────────────────────────────────────
+async function startClassification() {
+  const mode = document.querySelector('input[name="naming_mode"]:checked').value;
+  showScreen('processing');
+  completedSteps.clear();
+  resetSteps();
+
+  await fetch('/api/classify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ naming_mode: mode }),
+  });
+
+  const es = new EventSource('/api/classify/stream');
+  es.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+
+    if (msg.type === 'progress') {
+      updateStep(msg.step, msg.label, msg.detail);
+      document.getElementById('progress-bar').style.width = (msg.step / msg.total_steps * 100) + '%';
+    } else if (msg.type === 'complete') {
+      es.close();
+      playlists = msg.data;
+      renderResults();
+      showScreen('results');
+    } else if (msg.type === 'error') {
+      es.close();
+      alert('Classification error: ' + msg.message);
+      showScreen('configure');
+    }
+  };
+  es.onerror = () => { es.close(); };
+}
+
+function resetSteps() {
+  document.querySelectorAll('.step-item').forEach(li => {
+    li.className = 'step-item flex items-center gap-3 text-zinc-500';
+    const icon = li.querySelector('.step-icon');
+    icon.className = 'step-icon w-6 h-6 rounded-full border border-zinc-700 flex items-center justify-center text-xs shrink-0';
+    icon.textContent = '';
+  });
+}
+
+function updateStep(step, label, detail) {
+  // Mark previous steps as complete
+  for (let i = 1; i < step; i++) {
+    if (!completedSteps.has(i)) markComplete(i);
+  }
+
+  // Current step: active
+  const li = document.querySelector('[data-step="' + step + '"]');
+  if (!li) return;
+  li.className = 'step-item flex items-center gap-3 text-zinc-100';
+  const icon = li.querySelector('.step-icon');
+  icon.className = 'step-icon w-6 h-6 rounded-full border border-green-500 flex items-center justify-center text-xs shrink-0 pulse-bar';
+  icon.textContent = '';
+  const dot = document.createElement('span');
+  dot.className = 'w-2 h-2 bg-green-500 rounded-full';
+  icon.appendChild(dot);
+
+  // If detail contains final info for this step, mark complete
+  if (detail && detail !== label) {
+    completedSteps.add(step);
+    setTimeout(() => markComplete(step), 400);
+  }
+}
+
+function markComplete(step) {
+  const li = document.querySelector('[data-step="' + step + '"]');
+  if (!li) return;
+  completedSteps.add(step);
+  li.className = 'step-item flex items-center gap-3 text-green-400';
+  const icon = li.querySelector('.step-icon');
+  icon.className = 'step-icon w-6 h-6 rounded-full bg-green-500 flex items-center justify-center text-xs shrink-0';
+  icon.textContent = '';
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'w-3.5 h-3.5 text-black');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '3');
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path.setAttribute('stroke-linecap', 'round');
+  path.setAttribute('stroke-linejoin', 'round');
+  path.setAttribute('d', 'M5 13l4 4L19 7');
+  svg.appendChild(path);
+  icon.appendChild(svg);
+}
+
+// ─── Results ────────────────────────────────────────────────────
+function renderResults() {
+  const grid = document.getElementById('playlist-grid');
+  grid.textContent = '';
+
+  setText(document.getElementById('results-summary'), playlists.length + ' playlists');
+
+  playlists.forEach((p, i) => {
+    const genres = (p.top_genres || []).slice(0, 5);
+    const ap = p.audio_profile || {};
+
+    const card = document.createElement('div');
+    card.className = 'bg-zinc-900 rounded-lg border border-zinc-800 p-4 hover:border-zinc-700 transition-colors';
+
+    // Header row with checkbox
+    const header = document.createElement('div');
+    header.className = 'flex items-start gap-3 mb-3';
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = true;
+    cb.dataset.idx = i;
+    cb.className = 'mt-1 accent-green-500 w-4 h-4 shrink-0';
+    cb.addEventListener('change', updateSelectedCount);
+    header.appendChild(cb);
+
+    const info = document.createElement('div');
+    info.className = 'min-w-0';
+    const title = document.createElement('h3');
+    title.className = 'font-bold text-zinc-100 truncate';
+    title.textContent = p.name;
+    const count = document.createElement('p');
+    count.className = 'text-xs text-zinc-500';
+    count.textContent = p.track_count + ' tracks';
+    info.appendChild(title);
+    info.appendChild(count);
+    header.appendChild(info);
+    card.appendChild(header);
+
+    // Description
+    if (p.description) {
+      const desc = document.createElement('p');
+      desc.className = 'text-sm text-zinc-400 mb-3';
+      desc.textContent = p.description;
+      card.appendChild(desc);
+    }
+
+    // Genre pills
+    if (genres.length) {
+      const pillContainer = document.createElement('div');
+      pillContainer.className = 'flex flex-wrap gap-1.5 mb-3';
+      genres.forEach(([g]) => {
+        const pill = document.createElement('span');
+        pill.className = 'bg-zinc-700 text-zinc-300 rounded-full px-2 py-0.5 text-xs';
+        pill.textContent = g;
+        pillContainer.appendChild(pill);
+      });
+      card.appendChild(pillContainer);
+    }
+
+    // Audio bars
+    const bars = document.createElement('div');
+    bars.className = 'space-y-1.5';
+    [['Energy', ap.Energy, 'bg-orange-500'], ['Dance', ap.Danceability, 'bg-pink-500'], ['Valence', ap.Valence, 'bg-yellow-500']].forEach(([label, value, color]) => {
+      if (value == null) return;
+      const pct = Math.round(value * 100);
+      const row = document.createElement('div');
+      row.className = 'flex items-center gap-2 text-xs';
+
+      const lbl = document.createElement('span');
+      lbl.className = 'w-12 text-zinc-500';
+      lbl.textContent = label;
+      row.appendChild(lbl);
+
+      const track = document.createElement('div');
+      track.className = 'flex-1 bg-zinc-800 rounded-full h-1.5';
+      const fill = document.createElement('div');
+      fill.className = 'audio-bar ' + color + ' h-1.5 rounded-full';
+      fill.style.width = pct + '%';
+      track.appendChild(fill);
+      row.appendChild(track);
+
+      const val = document.createElement('span');
+      val.className = 'text-zinc-500 w-8 text-right';
+      val.textContent = pct + '%';
+      row.appendChild(val);
+
+      bars.appendChild(row);
+    });
+    card.appendChild(bars);
+
+    grid.appendChild(card);
+  });
+
+  updateSelectedCount();
+}
+
+function selectAll(checked) {
+  document.querySelectorAll('#playlist-grid input[type="checkbox"]').forEach(cb => cb.checked = checked);
+  updateSelectedCount();
+}
+
+function updateSelectedCount() {
+  const checked = document.querySelectorAll('#playlist-grid input[type="checkbox"]:checked').length;
+  const total = playlists.length;
+  setText(document.getElementById('selected-count'), checked + '/' + total + ' selected');
+}
+
+function getSelectedNames() {
+  const names = [];
+  document.querySelectorAll('#playlist-grid input[type="checkbox"]:checked').forEach(cb => {
+    names.push(playlists[parseInt(cb.dataset.idx)].name);
+  });
+  return names;
+}
+
+// ─── Sync ───────────────────────────────────────────────────────
+async function startSync() {
+  const names = getSelectedNames();
+  if (!names.length) return;
+
+  document.getElementById('sync-overlay').classList.remove('hidden');
+  document.getElementById('sync-progress-bar').style.width = '0%';
+  setText(document.getElementById('sync-status'), 'Starting...');
+
+  await fetch('/api/sync', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ playlist_names: names }),
+  });
+
+  const es = new EventSource('/api/sync/stream');
+  es.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+
+    if (msg.type === 'progress') {
+      const pct = (msg.index / msg.total * 100);
+      document.getElementById('sync-progress-bar').style.width = pct + '%';
+      setText(document.getElementById('sync-status'),
+        'Syncing "' + msg.playlist_name + '" (' + msg.index + '/' + msg.total + ')');
+    } else if (msg.type === 'complete') {
+      es.close();
+      document.getElementById('sync-progress-bar').style.width = '100%';
+      setText(document.getElementById('sync-status'), 'Sync complete!');
+      setTimeout(() => {
+        document.getElementById('sync-overlay').classList.add('hidden');
+      }, 1500);
+    } else if (msg.type === 'error') {
+      es.close();
+      setText(document.getElementById('sync-status'), 'Error: ' + msg.message);
+      setTimeout(() => {
+        document.getElementById('sync-overlay').classList.add('hidden');
+      }, 3000);
+    }
+  };
+  es.onerror = () => { es.close(); };
+}
+
+// ─── Init ───────────────────────────────────────────────────────
+if (window.location.hash === '#authenticated') {
+  history.replaceState(null, '', '/');
+}
+checkAuth();
+</script>
+</body>
+</html>
