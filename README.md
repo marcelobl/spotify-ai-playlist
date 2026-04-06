@@ -51,6 +51,11 @@ The system handles large libraries (10k+ tracks) and creates distinct, named pla
    - `SPOTIFY_CLIENT_ID`
    - `SPOTIFY_CLIENT_SECRET`
    - `SPOTIFY_WEB_REDIRECT_URI` (Defaults to `http://127.0.0.1:5000/api/auth/callback` for the Web UI)
+   - `SPOTIFY_REDIRECT_URI` (Defaults to `http://127.0.0.1:8888/callback` for the CLI)
+
+   **Important:** You MUST register these Redirect URIs in your [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) under your App settings:
+   - `http://127.0.0.1:5000/api/auth/callback`
+   - `http://127.0.0.1:8888/callback`
 
 ## Usage
 
