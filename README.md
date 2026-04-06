@@ -4,7 +4,7 @@ A sophisticated Python-based tool for organizing Spotify "Liked Songs" into cohe
 
 ## Overview
 
-This project analyzes a user's Spotify library (exported as `Liked_Songs.csv`) and automatically groups tracks into meaningful playlists. Unlike simple genre-based sorting, it uses a hybrid approach:
+This project analyzes a user's Spotify library (fetched directly via the API) and automatically groups tracks into meaningful playlists. Unlike simple genre-based sorting, it uses a hybrid approach:
 - **Genre Semantics:** High-dimensional embeddings capture the relationship between musical genres.
 - **Audio Features:** Technical attributes like danceability, energy, and acousticness ensure a consistent "vibe" within each playlist.
 
@@ -12,16 +12,16 @@ The system handles large libraries (10k+ tracks) and creates distinct, named pla
 
 ## Features
 
+- **Direct Spotify Integration:** Fetch your Liked Songs directly from the Spotify API—no manual export needed.
 - **Advanced Clustering Pipeline:** Uses **UMAP** for dimensionality reduction and **HDBSCAN** for density-based clustering to handle outliers and effectively cluster tracks.
 - **Intelligent Naming Engine:** Maps genre signatures to evocative, thematic names (e.g., "Tarde no Rio" for Bossa Nova/Samba, "Deep Cuts" for Lo-fi House).
 - **Web UI:** A FastAPI-powered web interface with real-time SSE streaming for progress visualization.
-- **Spotify Integration:** Automatically creates or updates playlists on your Spotify account.
+- **Spotify Sync:** Automatically creates or updates playlists on your Spotify account.
 
 ## Prerequisites
 
 - **Python 3.12** or higher.
 - A **Spotify Developer Account** to create an App and obtain credentials.
-- Your exported **`Liked_Songs.csv`** file (which must include track metadata, genres, and Spotify audio features) placed in the project root.
 
 ## Installation
 
@@ -56,7 +56,7 @@ The system handles large libraries (10k+ tracks) and creates distinct, named pla
 
 ### Web Interface (Recommended)
 
-The Web UI provides a visual representation of the processing pipeline, streaming progress in real-time.
+The Web UI provides a visual representation of the processing pipeline, streaming progress in real-time. It handles Spotify authentication and fetches your tracks automatically.
 
 1. Start the FastAPI server:
    ```bash
@@ -69,11 +69,11 @@ The Web UI provides a visual representation of the processing pipeline, streamin
 
 You can also run the pipeline manually using the CLI scripts.
 
-1. **Generate clusters and playlists locally:**
+1. **Generate clusters and playlists:**
    ```bash
    python classify_songs.py
    ```
-   This reads `Liked_Songs.csv`, computes embeddings, runs UMAP/HDBSCAN, and produces `output/playlists.json`, `output/playlists_summary.csv`, and an interactive `output/diagnostics.html`.
+   The script will prompt you to authenticate with Spotify to fetch your liked songs directly. This produces `output/playlists.json`, `output/playlists_summary.csv`, and an interactive `output/diagnostics.html`.
 
 2. **Sync to your Spotify account:**
    ```bash

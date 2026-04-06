@@ -18,7 +18,6 @@ from sklearn.neighbors import NearestNeighbors
 from sklearn.metrics import silhouette_score
 
 # ─── Configuration ───────────────────────────────────────────────
-INPUT_CSV = Path(__file__).parent / "Liked_Songs.csv"
 OUTPUT_DIR = Path(__file__).parent / "output"
 CACHE_DIR = Path(__file__).parent / ".cache"
 
@@ -39,24 +38,28 @@ AUDIO_FEATURES = [
 ]
 
 
-def run_pipeline(naming_mode="descriptive", progress_callback=None):
+def run_pipeline(naming_mode="descriptive", progress_callback=None, sp=None):
     """
     Run the full classification pipeline.
 
     Args:
         naming_mode: "descriptive" (match signatures first) or "creative" (generate names)
         progress_callback: optional callable(step, total_steps, label, detail)
+        sp: spotipy client to fetch liked songs directly
 
     Returns:
         list of named playlist dicts
     """
+    if not sp:
+        raise ValueError("Spotify client (sp) is required for the pipeline.")
+
     def _progress(step, label, detail=""):
         if progress_callback:
             progress_callback(step, 10, label, detail)
 
     # Step 1: Load data
-    _progress(1, "Loading data")
-    df = load_data()
+    _progress(1, "Fetching liked songs from Spotify")
+    df = fetch_liked_songs(sp, progress_callback=progress_callback)
     _progress(1, "Loading data", f"Loaded {len(df)} tracks, {df['has_genre'].sum()} with genres")
 
     # Step 2: Artist genre backfill
@@ -121,7 +124,20 @@ def main():
         if detail:
             print(f"  {detail}")
 
-    named_playlists = run_pipeline(progress_callback=cli_progress)
+    # Always fetch from Spotify
+    try:
+        from sync_to_spotify import get_spotify_client
+        sp = get_spotify_client()
+    except Exception as e:
+        print(f"  Error authenticating with Spotify: {e}")
+        print("  Please ensure .env is configured correctly.")
+        return
+
+    try:
+        named_playlists = run_pipeline(progress_callback=cli_progress, sp=sp)
+    except Exception as e:
+        print(f"\nPipeline failed: {e}")
+        return
 
     all_uris = set()
     for p in named_playlists:
@@ -133,21 +149,112 @@ def main():
     print(f"{'=' * 60}")
 
 
-# ─── Step 1: Load Data ──────────────────────────────────────────
-def load_data():
-    df = pd.read_csv(INPUT_CSV, encoding="utf-8-sig")
+# ─── Step 1: Fetch Data ─────────────────────────────────────────
+def fetch_liked_songs(sp, progress_callback=None):
+    """Fetch liked songs directly from Spotify API."""
+    import time
+    
+    def _prog(label, detail=""):
+        if progress_callback:
+            progress_callback(1, 10, label, detail)
 
-    # Parse genres
+    _prog("Fetching liked tracks metadata")
+    tracks = []
+    results = sp.current_user_saved_tracks(limit=50)
+    tracks.extend(results["items"])
+    while results["next"]:
+        results = sp.next(results)
+        tracks.extend(results["items"])
+        _prog("Fetching liked tracks metadata", f"Retrieved {len(tracks)} tracks...")
+
+    _prog("Processing tracks", f"Total: {len(tracks)} tracks")
+    
+    # 1. Build basic track info
+    rows = []
+    track_ids = []
+    artist_ids_map = {} # track_id -> [artist_ids]
+    all_artist_ids = set()
+    
+    for item in tracks:
+        t = item["track"]
+        tid = t["id"]
+        track_ids.append(tid)
+        
+        # Metadata
+        artists = t["artists"]
+        a_names = ", ".join([a["name"] for a in artists])
+        a_ids = [a["id"] for a in artists]
+        all_artist_ids.update(a_ids)
+        artist_ids_map[tid] = a_ids
+        
+        rows.append({
+            "Track URI": f"spotify:track:{tid}",
+            "Track Name": t["name"],
+            "Artist Name(s)": a_names,
+            "Release Date": t["album"]["release_date"],
+            "id": tid
+        })
+
+    # 2. Fetch Audio Features in batches of 100
+    _prog("Fetching audio features")
+    audio_features = []
+    for i in range(0, len(track_ids), 100):
+        batch = track_ids[i:i+100]
+        af_results = sp.audio_features(batch)
+        audio_features.extend(af_results)
+        _prog("Fetching audio features", f"Progress: {len(audio_features)}/{len(track_ids)}")
+
+    # 3. Fetch Artist Genres in batches of 50
+    _prog("Fetching artist genres")
+    artist_genres = {}
+    artist_list = list(all_artist_ids)
+    for i in range(0, len(artist_list), 50):
+        batch = artist_list[i:i+50]
+        a_results = sp.artists(batch)
+        for a in a_results["artists"]:
+            if a:
+                artist_genres[a["id"]] = a.get("genres", [])
+        _prog("Fetching artist genres", f"Progress: {min(i+50, len(artist_list))}/{len(artist_list)}")
+
+    # 4. Combine all data
+    df_rows = []
+    af_map = {af["id"]: af for af in audio_features if af}
+    
+    for row in rows:
+        tid = row["id"]
+        af = af_map.get(tid, {})
+        
+        # Audio features (standardizing names to match expected schema)
+        row["Danceability"] = af.get("danceability", 0)
+        row["Energy"] = af.get("energy", 0)
+        row["Loudness"] = af.get("loudness", 0)
+        row["Speechiness"] = af.get("speechiness", 0)
+        row["Acousticness"] = af.get("acousticness", 0)
+        row["Instrumentalness"] = af.get("instrumentalness", 0)
+        row["Liveness"] = af.get("liveness", 0)
+        row["Valence"] = af.get("valence", 0)
+        row["Tempo"] = af.get("tempo", 0)
+        
+        # Genres from artists
+        g_list = []
+        for aid in artist_ids_map.get(tid, []):
+            g_list.extend(artist_genres.get(aid, []))
+        
+        # Unique and comma-separated
+        unique_genres = sorted(list(set(g_list)))
+        row["Genres"] = ", ".join(unique_genres)
+        
+        df_rows.append(row)
+
+    df = pd.DataFrame(df_rows)
+    
+    # Final internal processing to match load_data()
     df["genre_list"] = df["Genres"].fillna("").apply(
         lambda x: [g.strip() for g in x.split(",") if g.strip()]
     )
     df["genre_string"] = df["genre_list"].apply(lambda x: ", ".join(x))
     df["has_genre"] = df["genre_list"].apply(lambda x: len(x) > 0)
-
-    # Ensure audio features are numeric
-    for feat in AUDIO_FEATURES:
-        df[feat] = pd.to_numeric(df[feat], errors="coerce").fillna(0)
-
+    
     return df
 
 

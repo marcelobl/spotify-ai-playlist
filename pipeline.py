@@ -17,13 +17,14 @@ class PipelineRunner:
         self._thread = None
         self.result = None
 
-    def start(self, naming_mode="descriptive"):
+    def start(self, naming_mode="descriptive", sp=None):
         def _run():
             try:
                 from classify_songs import run_pipeline
                 result = run_pipeline(
                     naming_mode=naming_mode,
                     progress_callback=self._on_progress,
+                    sp=sp,
                 )
                 self.result = result
                 self._queue.put({"type": "complete", "data": self._serialize(result)})

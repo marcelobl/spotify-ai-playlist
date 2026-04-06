@@ -111,8 +111,9 @@ async def classify(request: Request):
     body = await request.json()
     naming_mode = body.get("naming_mode", "descriptive")
 
+    sp = _get_spotify_client()
     _pipeline_runner = PipelineRunner()
-    _pipeline_runner.start(naming_mode=naming_mode)
+    _pipeline_runner.start(naming_mode=naming_mode, sp=sp)
     _last_results = None
     return JSONResponse({"status": "started"}, status_code=202)
 
