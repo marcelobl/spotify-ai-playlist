@@ -1,6 +1,6 @@
 # Spotify Liked Songs Classifier
 
-A sophisticated Python-based tool for organizing Spotify "Liked Songs" into cohesive, thematic playlists using hybrid genre-embedding and audio-feature clustering. 
+A Python-based tool for organizing Spotify "Liked Songs" into cohesive, thematic playlists using hybrid genre-embedding and audio-feature clustering. 
 
 ## Overview
 
