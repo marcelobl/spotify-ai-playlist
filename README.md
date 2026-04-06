@@ -118,18 +118,13 @@ You can also run the pipeline manually using the CLI scripts.
 ## Architecture
 
 ### Data Pipeline
-
-```mermaid
-graph TD
-    A[Spotify API] --> B{Fetch Liked Songs, Audio Features, Genres};
-    B --> C{Preprocess Data & Create Hybrid Feature Matrix};
-    C --> D{UMAP for Dimensionality Reduction};
-    D --> E{HDBSCAN for Clustering};
-    E --> F{Soft Clustering & Recursive Refinement};
-    F --> G{Intelligent Playlist Naming};
-    G --> H[output/playlists.json];
-    H --> I[Spotify Sync: Create/Update Playlists];
-```
+- **Data Acquisition:** Fetches all your "Liked Songs," along with their detailed audio features and artist genres directly from the Spotify API.
+- **Preprocessing:** The raw data is cleaned, and a hybrid feature matrix is constructed by combining semantic genre embeddings and technical audio features.
+- **Dimensionality Reduction:** The powerful **UMAP** algorithm is used to reduce the high-dimensional data into a lower-dimensional space, making it easier to find meaningful patterns.
+- **Clustering:** **HDBSCAN**, a density-based algorithm, is used to cluster the songs. It excels at identifying clusters of various shapes and sizes and is robust to noise (outliers).
+- **Refinement:** Large, dense clusters are recursively sub-clustered to ensure each playlist is highly specific and thematic. A soft clustering approach allows a single song to appear in multiple related playlists.
+- **Intelligent Naming:** A custom naming engine analyzes the genre composition of each cluster and assigns it an evocative, thematic name.
+- **Output & Sync:** The final playlists are generated as a `playlists.json` file, which is then used to create or update the playlists directly in your Spotify account.
 
 - **`app.py`**: FastAPI web interface serving static files and API routes.
 - **`pipeline.py`**: Contains the core logic for the Web UI's data processing stream.
