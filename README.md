@@ -10,8 +10,6 @@ This project analyzes a user's Spotify library (fetched directly via the API) an
 
 The system handles large libraries (10k+ tracks) and creates distinct, named playlists. It provides both a traditional CLI and a modern Web UI for real-time progress tracking.
 
-![Web UI Interface](assets/web_ui.png)
-
 ## Features
 
 - **Direct Spotify Integration:** Fetch your Liked Songs directly from the Spotify API—no manual export needed.
@@ -59,6 +57,18 @@ The system handles large libraries (10k+ tracks) and creates distinct, named pla
 ### Web Interface (Recommended)
 
 The Web UI provides a visual representation of the processing pipeline, streaming progress in real-time. It handles Spotify authentication and fetches your tracks automatically.
+
+#### 1. Connect and Authenticate
+![Step 1: Authenticate](assets/step1_auth.png)
+
+#### 2. Start Classification
+![Step 2: Dashboard](assets/step2_dashboard.png)
+
+#### 3. Monitor Real-time Progress
+![Step 3: Processing](assets/step3_processing.png)
+
+#### 4. Review and Sync to Spotify
+![Step 4: Results](assets/step4_results.png)
 
 1. Start the FastAPI server:
    ```bash
